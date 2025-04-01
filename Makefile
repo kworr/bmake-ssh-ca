@@ -38,6 +38,12 @@ USERS:=	${:!find users -type f -name '*@*.pub' | grep -v '\-cert.pub'!}
 TYPES:=	ed25519 rsa
 HOSTKEYS:=
 USERKEYS:=
+HOST_PERIOD:=1095
+USER_PERIOD:=1095
+
+.if exists(conf.mk)
+.	include "conf.mk"
+.endif
 
 all: hostkeys userkeys
 .if empty(HOSTS) && empty(USERS)
@@ -57,7 +63,7 @@ _PRINT: .USE
 .		if exists(${HOST}/ssh_host_${TYPE}_key.pub)
 HOSTKEYS+=	${HOST}/ssh_host_${TYPE}_key-cert.pub
 ${HOST}/ssh_host_${TYPE}_key-cert.pub: ${HOST}/ssh_host_${TYPE}_key.pub _PRINT
-	ssh-keygen -Us server_ca.pub -I "${HOST} host key" -n "${HOST},${HOST:C/\..*//g}" -h -V -1d:+1095d $>
+	ssh-keygen -Us server_ca.pub -I "${HOST} host key" -n "${HOST},${HOST:C/\..*//g}" -h -V -1d:+${HOST_PERIOD}d $>
 .		endif
 .	endfor
 .endfor
@@ -65,7 +71,7 @@ ${HOST}/ssh_host_${TYPE}_key-cert.pub: ${HOST}/ssh_host_${TYPE}_key.pub _PRINT
 .for USERKEY in ${USERS}
 USERKEYS+=	${USERKEY:C/\.pub$/-cert.pub/}
 ${USERKEY:C/\.pub$/-cert.pub/}: ${USERKEY} _PRINT
-	ssh-keygen -Us server_ca.pub -I "${USERKEY:C|^users/||} user key" -n ${USERKEY:C|^users/||:C|@.*||} -V -5m:+1095d $>
+	ssh-keygen -Us server_ca.pub -I "${USERKEY:C|^users/||} user key" -n ${USERKEY:C|^users/||:C|@.*||} -V -5m:+${USER_PERIOD}d $>
 .endfor
 
 hostkeys: ${HOSTKEYS}

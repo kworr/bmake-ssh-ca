@@ -1,0 +1,5 @@
+# how many days HOST key would be valid
+HOST_PERIOD:=1095
+
+# how many days USER key would be valid
+USER_PERIOD:=1095
