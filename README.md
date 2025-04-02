@@ -20,3 +20,12 @@ configuration yourself, but it's mostly static, script it the way you want.
 Please choose a good password, I beg you. Also please don't share the contents
 of directory anywhere. Even better, move it to some flash drive and keep it
 offline, preferrably in 2 copies.
+
+## Periodic checks
+
+You can add this to your crontab to make periodic checks for expiring
+certificates:
+
+    @weekly make check -C /path/to/your/folder
+
+It will only generate some output if there are some keys expiring soon.

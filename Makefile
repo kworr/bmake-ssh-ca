@@ -33,17 +33,22 @@
 #
 # (C) Volodymyr Kostyrko, 2023, arcade@b1t.name
 
-HOSTS:=	${:!find . -maxdepth 1 -mindepth 1 -type d | grep -v 'users' | sed -e 's/^\.\///g'!}
-USERS:=	${:!find users -type f -name '*@*.pub' | grep -v '\-cert.pub'!}
-TYPES:=	ed25519 rsa
-HOSTKEYS:=
-USERKEYS:=
-HOST_PERIOD:=1095
-USER_PERIOD:=1095
+HOST_PERIOD:=3y
+USER_PERIOD:=3y
+WARN_PERIOD:=1m
 
 .if exists(conf.mk)
 .	include "conf.mk"
 .endif
+
+HOSTS:=	${:!find . -maxdepth 1 -mindepth 1 -type d | grep -v 'users' | sed -e 's/^\.\///g'!}
+USERS:=	${:!find users -type f -name '*@*.pub' | grep -v '\-cert.pub'!}
+CERTS:=	${:!find . -name '*-cert.pub'!}
+WARN_TIME:=	${:!date -v-${WARN_PERIOD} +"%s"!}
+NOW_TIME:=	${:!date +"%s"!}
+TYPES:=	ed25519 rsa
+HOSTKEYS:=
+USERKEYS:=
 
 all: hostkeys userkeys
 .if empty(HOSTS) && empty(USERS)
@@ -85,3 +90,16 @@ server_ca:
 
 help:
 	@awk '$$0~/^([^#]|$$)/{exit}$$0~/^#/{gsub("^# ?", "");print$$0}' Makefile
+
+check:
+.for CERT in ${CERTS}
+	@CERT_EXPIRE=`ssh-keygen -L -f ${CERT} | awk '$$1~/^Valid:$$/{print}'`; \
+	CERT_EXPIRE_DATE=`echo $${CERT_EXPIRE} | awk '$$1~/^Valid:$$/{print"date -jf \"%FT%T\" "$$5" +\"%s\"";exit}' | sh`; \
+	if [ ${NOW_TIME} -ge $${CERT_EXPIRE_DATE} ]; then \
+		echo ${CERT} already expired; \
+		echo $${CERT_EXPIRE}; \
+	elif [ ${WARN_TIME} -ge $${CERT_EXPIRE_DATE} ]; then \
+		echo ${CERT} already expired; \
+		echo $${CERT_EXPIRE}; \
+	fi
+.endfor
